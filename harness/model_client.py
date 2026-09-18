@@ -3,7 +3,7 @@ import time
 import requests
 
 OLLAMA_CHAT_URL = "http://localhost:11434/api/chat"
-DEFAULT_MODEL = "qwen3:8b"
+DEFAULT_MODEL = "qwen3:1.7b"
 DEFAULT_TIMEOUT = 60
 MAX_RETRIES = 3
 BACKOFF_SECONDS = [1, 2, 4]
@@ -39,8 +39,10 @@ class ModelClient:
             ],
             "stream": False,
             "think": False,
+            "format": "json",          # <-- thêm dòng này
             "options": {"temperature": 0},
         }
+
 
         last_error: Exception | None = None
 

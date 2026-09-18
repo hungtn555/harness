@@ -15,9 +15,10 @@ class ContextBuilder:
         indent = INDENT_UNIT * depth
         post_id = post["id"]
         author = post["author"]
+        title = post.get("title")
         content = post["content"]
-        return f"{indent}[Bài #{post_id}] {author}: {content}"
-
+        return f'{indent}[Bài #{post_id}] {author} - "{title}": {content}'
+        
     def build(self, posts: list[dict]) -> list[str]:
         """Trả về list các chunk text. Nếu posts rỗng, trả về list rỗng."""
         if not posts:

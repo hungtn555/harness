@@ -19,6 +19,7 @@ class ForumPost(BaseModel):
     id: int
     depth: int
     author: str
+    title: str
     content: str
 
 
