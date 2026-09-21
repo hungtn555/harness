@@ -12,7 +12,7 @@ from schemas import SummaryOutput
 
 app = FastAPI()
 
-MODEL_TIMEOUT = 360  # qwen3:8b chạy CPU có thể mất 1-3 phút
+MODEL_TIMEOUT = 360  # qwen3:8b on CPU can take 1-3 minutes
 
 
 class ForumPost(BaseModel):

@@ -16,8 +16,9 @@ class OutputParserError(Exception):
 
 
 class OutputParser:
-    """Parse JSON trả về từ model, xử lý trường hợp bọc trong ```json```
-    hoặc kèm <think>...</think>, rồi validate bằng Pydantic."""
+    """Parses the JSON returned by the model, handling output wrapped in
+    ```json``` or accompanied by <think>...</think>, then validates it
+    with Pydantic."""
 
     def _strip_think_tags(self, raw: str) -> str:
         return THINK_TAG_PATTERN.sub("", raw).strip()
@@ -29,8 +30,8 @@ class OutputParser:
         if match:
             return match.group(1).strip()
 
-        # Không có code fence: thử tìm đối tượng JSON đầu tiên trong text
-        # bằng cách lấy từ dấu { đầu tiên đến dấu } cuối cùng.
+        # No code fence: try to find the first JSON object in the text by
+        # taking everything from the first { to the last }.
         start = text.find("{")
         end = text.rfind("}")
         if start != -1 and end != -1 and end > start:

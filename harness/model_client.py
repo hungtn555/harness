@@ -3,7 +3,7 @@ import time
 import requests
 
 OLLAMA_CHAT_URL = "http://localhost:11434/api/chat"
-DEFAULT_MODEL = "qwen3:1.7b"
+DEFAULT_MODEL = "qwen3.5:0.8b"
 DEFAULT_TIMEOUT = 60
 MAX_RETRIES = 3
 BACKOFF_SECONDS = [1, 2, 4]
@@ -14,8 +14,8 @@ class ModelClientError(Exception):
 
 
 class ModelClient:
-    """Gọi Ollama qua /api/chat, có retry với backoff khi gặp lỗi
-    timeout/connection."""
+    """Calls Ollama through /api/chat, retrying with backoff on
+    timeout/connection errors."""
 
     def __init__(
         self,
@@ -28,9 +28,9 @@ class ModelClient:
         self.timeout = timeout
 
     def chat(self, system_prompt: str, user_prompt: str) -> dict:
-        """Gửi request chat tới Ollama, trả về dict gồm:
+        """Sends a chat request to Ollama and returns a dict with:
         content (str), prompt_tokens, completion_tokens, total_tokens.
-        Ném ModelClientError nếu thất bại sau toàn bộ số lần retry."""
+        Raises ModelClientError if it still fails after all retries."""
         payload = {
             "model": self.model,
             "messages": [
@@ -39,7 +39,7 @@ class ModelClient:
             ],
             "stream": False,
             "think": False,
-            "format": "json",          # <-- thêm dòng này
+            "format": "json",
             "options": {"temperature": 0},
         }
 
