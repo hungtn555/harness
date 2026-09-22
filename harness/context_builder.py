@@ -3,9 +3,9 @@ INDENT_UNIT = "  "
 
 
 class ContextBuilder:
-    """Ghép danh sách bài đăng forum thành text có thụt lề theo depth,
-    rồi cắt thành các chunk tối đa MAX_CHUNK_CHARS ký tự, chỉ cắt tại
-    ranh giới giữa các bài đăng (không cắt giữa nội dung 1 bài)."""
+    """Joins forum posts into text indented by depth, then splits it into
+    chunks of at most MAX_CHUNK_CHARS characters, cutting only at post
+    boundaries (never in the middle of a post)."""
 
     def __init__(self, max_chunk_chars: int = MAX_CHUNK_CHARS):
         self.max_chunk_chars = max_chunk_chars
@@ -13,14 +13,13 @@ class ContextBuilder:
     def _format_post(self, post: dict) -> str:
         depth = post.get("depth", 0)
         indent = INDENT_UNIT * depth
-        post_id = post["id"]
         author = post["author"]
         title = post.get("title")
         content = post["content"]
-        return f'{indent}[Bài #{post_id}] {author} - "{title}": {content}'
+        return f'{indent}{author} - "{title}": {content}'
         
     def build(self, posts: list[dict]) -> list[str]:
-        """Trả về list các chunk text. Nếu posts rỗng, trả về list rỗng."""
+        """Returns a list of text chunks. If posts is empty, returns an empty list."""
         if not posts:
             return []
 
@@ -31,10 +30,10 @@ class ContextBuilder:
         current_len = 0
 
         for line in formatted_lines:
-            line_len = len(line) + 1  # +1 cho ký tự newline nối giữa các bài
+            line_len = len(line) + 1  # +1 for the newline joining the posts
 
-            # Nếu một bài đăng đơn lẻ đã vượt quá max_chunk_chars, vẫn giữ
-            # nguyên nó thành 1 chunk riêng (không cắt giữa nội dung bài đó).
+            # If a single post already exceeds max_chunk_chars, keep it as its
+            # own chunk (never cut in the middle of a post).
             if current_lines and current_len + line_len > self.max_chunk_chars:
                 chunks.append("\n".join(current_lines))
                 current_lines = []

@@ -46,7 +46,7 @@ class OutputParser:
             data = json.loads(json_text)
         except json.JSONDecodeError as exc:
             raise OutputParserError(
-                f"Model không trả về JSON hợp lệ: {exc}\n"
+                f"The model did not return valid JSON: {exc}\n"
                 f"--- Raw output ---\n{raw_output}"
             ) from exc
 
@@ -54,6 +54,6 @@ class OutputParser:
             return SummaryOutput.model_validate(data)
         except ValidationError as exc:
             raise OutputParserError(
-                f"JSON trả về không khớp schema SummaryOutput: {exc}\n"
+                f"The returned JSON does not match the SummaryOutput schema: {exc}\n"
                 f"--- Parsed JSON ---\n{json.dumps(data, ensure_ascii=False)}"
             ) from exc

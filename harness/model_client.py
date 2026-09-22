@@ -14,8 +14,9 @@ class ModelClientError(Exception):
 
 
 class ModelClient:
-    """Calls Ollama through /api/chat, retrying with backoff on
-    timeout/connection errors."""
+    """Calls Ollama through /api/chat, retrying with backoff on connection
+    errors. A read timeout is NOT retried: the model is just slow, and a retry
+    would only repeat the same long wait."""
 
     def __init__(
         self,
@@ -27,10 +28,16 @@ class ModelClient:
         self.base_url = base_url
         self.timeout = timeout
 
-    def chat(self, system_prompt: str, user_prompt: str) -> dict:
+    def chat(
+        self, system_prompt: str, user_prompt: str, deadline: float | None = None
+    ) -> dict:
         """Sends a chat request to Ollama and returns a dict with:
         content (str), prompt_tokens, completion_tokens, total_tokens.
-        Raises ModelClientError if it still fails after all retries."""
+
+        deadline is an optional time.monotonic() value shared by every call of
+        one request: each attempt's timeout is capped by the time left, so the
+        whole request never runs past it.
+        Raises ModelClientError if it fails, times out or runs out of time."""
         payload = {
             "model": self.model,
             "messages": [
@@ -43,13 +50,21 @@ class ModelClient:
             "options": {"temperature": 0},
         }
 
-
         last_error: Exception | None = None
 
         for attempt in range(MAX_RETRIES):
+            timeout = self.timeout
+            if deadline is not None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise ModelClientError(
+                        "Time budget for this request was used up before Ollama answered"
+                    ) from last_error
+                timeout = min(timeout, remaining)
+
             try:
                 response = requests.post(
-                    self.base_url, json=payload, timeout=self.timeout
+                    self.base_url, json=payload, timeout=timeout
                 )
                 response.raise_for_status()
                 data = response.json()
@@ -65,14 +80,19 @@ class ModelClient:
                     "completion_tokens": completion_tokens,
                     "total_tokens": prompt_tokens + completion_tokens,
                 }
-            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as exc:
+            except requests.exceptions.ReadTimeout as exc:
+                raise ModelClientError(
+                    f"Ollama did not answer within {timeout:.0f}s: {exc}"
+                ) from exc
+            except requests.exceptions.ConnectionError as exc:
+                # Includes ConnectTimeout. Ollama may still be starting up.
                 last_error = exc
                 if attempt < MAX_RETRIES - 1:
                     time.sleep(BACKOFF_SECONDS[attempt])
                 continue
             except requests.exceptions.RequestException as exc:
-                raise ModelClientError(f"Lỗi gọi Ollama: {exc}") from exc
+                raise ModelClientError(f"Ollama request failed: {exc}") from exc
 
         raise ModelClientError(
-            f"Gọi Ollama thất bại sau {MAX_RETRIES} lần thử: {last_error}"
+            f"Could not reach Ollama after {MAX_RETRIES} attempts: {last_error}"
         ) from last_error

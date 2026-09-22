@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 
 class HarnessLogger:
-    """In ra JSON log có cấu trúc cho mỗi lần chạy harness: feature,
+    """Prints a structured JSON log for each harness run: feature,
     prompt_version, model, tokens_used, duration_seconds, success."""
 
     def __init__(self, feature: str, prompt_version: str, model: str):
@@ -28,8 +28,8 @@ class HarnessLogger:
 
     @contextmanager
     def track(self):
-        """Context manager tiện dụng: đo thời gian chạy, tự log kết quả.
-        Dùng: with logger.track() as t: ... ; t.tokens_used = N"""
+        """Handy context manager: measures run time and logs the result.
+        Usage: with logger.track() as t: ... ; t.tokens_used = N"""
 
         class _Tracker:
             tokens_used: int = 0
